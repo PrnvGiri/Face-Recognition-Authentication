@@ -5,3 +5,4 @@ env/
 venv/
 .env
 src/face_model.pth
+Resource/
