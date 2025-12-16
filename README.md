@@ -4,7 +4,7 @@ A secure login system offering both **Face Recognition** (Face ID) and **Passwor
 
 ## Features
 - **Dual Authentication**:
-    - **Password**: Standard secure login (Default: `INTELLIPAAT`).
+    - **Password**: Standard secure login (Default: `1234`).
     - **Face ID**: secure biometric login using `FaceNet` embeddings.
 - **Folder-Based User Management**:
     - Users are defined simply by creating a folder in `src/FaceData/Username`.

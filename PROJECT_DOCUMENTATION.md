@@ -20,7 +20,7 @@ It uses a Client-Server architecture where **Flask** (Python) runs the backend l
 *   **Role**: The Gatekeeper.
 *   **User Management**: It does not use a traditional SQL database. Instead, it scans the `src/FaceData` directory.
     *   If a folder exists named `Pranav`, then "Pranav" is a valid user.
-*   **Password Logic**: Currently enforces a strict default password (`INTELLIPAAT`) for all users for simplicity.
+*   **Password Logic**: Currently enforces a strict default password (`1234`) for all users for simplicity.
 
 ### Camera Controller (`src/camera.py`)
 *   **Role**: Privacy & Performance Manager.

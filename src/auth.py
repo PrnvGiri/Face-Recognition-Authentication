@@ -3,7 +3,7 @@ import os
 class AuthSystem:
     def __init__(self):
         self.face_data_path = 'src/FaceData'
-        self.default_password = 'INTELLIPAAT'
+        self.default_password = '1234'
 
     def get_users(self):
         """Returns a set of valid usernames (folder names)."""
