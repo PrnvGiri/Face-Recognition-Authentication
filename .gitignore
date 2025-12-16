@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+src/FaceData/
+env/
+venv/
+.env
+src/face_model.pth

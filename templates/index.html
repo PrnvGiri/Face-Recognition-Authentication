@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Security System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Face Security System</h1>
+            <div class="status-indicator online">
+                <span class="dot"></span> System Active
+            </div>
+        </header>
+
+        <main>
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <img src="{{ url_for('video_feed') }}" alt="Security Feed">
+                    <div class="overlay">
+                        <div class="live-badge">LIVE</div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="sidebar">
+                <div class="panel">
+                    <h2>Detection Log</h2>
+                    <div id="alerts-list" class="alerts-list">
+                        <div class="alert-item info">
+                            <span class="time">--:--:--</span>
+                            <span class="msg">Waiting for detections...</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+
+</html>
