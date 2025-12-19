@@ -41,25 +41,30 @@
             <div class="camera-preview">
                 <img src="{{ url_for('video_feed') }}" alt="Camera Feed">
             </div>
-            <div class="form-group">
-                <label for="face-username">Username to Verify</label>
-                <input type="text" id="face-username" name="username" required placeholder="Enter your username">
-            </div>
-            <p id="face-status" class="status-text">Looking for face...</p>
-            <button onclick="attemptFaceLogin()" class="btn primary">Authenticate with Face</button>
+            <!-- Username input removed for auto detection -->
+            <p id="face-status" class="status-text">Initializing camera...</p>
+            <!-- Button removed, process is automatic -->
         </div>
     </div>
 
     <script>
+        let faceAuthInterval;
+
         function switchTab(tab) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.login-form').forEach(form => form.classList.remove('active'));
+
+            // Clear timer
+            if (faceAuthInterval) {
+                clearInterval(faceAuthInterval);
+                faceAuthInterval = null;
+            }
 
             if (tab === 'password') {
                 document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
                 document.getElementById('password-login').classList.add('active');
 
-                // Stop camera
+                // Stop
                 fetch('/api/camera_control', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -69,58 +74,95 @@
                 document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
                 document.getElementById('face-login').classList.add('active');
 
-                // Start camera
+                const status = document.getElementById('face-status');
+                status.textContent = "Starting camera...";
+                status.style.color = "#666";
+
+                // Start
                 fetch('/api/camera_control', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'start' })
-                });
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            status.textContent = "Scanning for face...";
+                            // Poll
+                            startFacePolling();
+                        } else {
+                            status.textContent = "Failed to start camera.";
+                            status.style.color = "red";
+                        }
+                    });
             }
         }
 
-        async function attemptFaceLogin() {
-            const username = document.getElementById('face-username').value;
+        function startFacePolling() {
+            // Poll
+            faceAuthInterval = setInterval(attemptAutoLogin, 1000);
+        }
+
+        async function attemptAutoLogin() {
             const status = document.getElementById('face-status');
 
-            if (!username) {
-                status.textContent = "Please enter a username first.";
-                status.style.color = "red";
-                return;
-            }
-
-            status.textContent = "Verifying...";
-            status.style.color = "#666";
-
             try {
+                // Auto Request
                 const response = await fetch('/api/face_auth', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ username: username })
+                    body: JSON.stringify({})
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    // Stop camera explicitly on success
+                    // Stop poll
+                    if (faceAuthInterval) {
+                        clearInterval(faceAuthInterval);
+                        faceAuthInterval = null;
+                    }
+
+                    // Stop
                     await fetch('/api/camera_control', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action: 'stop' })
                     });
 
-                    status.textContent = "Success! Redirecting...";
+                    // Success
+                    const name = data.detected_name || "User";
+                    status.textContent = `${name} face detected then ${name} logged in.`;
                     status.style.color = "green";
-                    window.location.href = data.redirect;
+
+                    // Redirect
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 1500);
+
                 } else {
-                    status.textContent = data.message;
-                    status.style.color = "red";
+                    // Update UI
+                    if (data.message.includes("No face")) {
+                        status.textContent = "Looking for face...";
+                        status.style.color = "#666";
+                    } else if (data.message.includes("Unknown")) {
+                        status.textContent = "Face detected: Unknown user. Please register first.";
+                        status.style.color = "orange";
+                    } else {
+                        // Unknown UI
+                        if (data.detected_name) {
+                            status.textContent = `Scanned: ${data.detected_name} (Not logged in)`;
+                        } else {
+                            status.textContent = "Scanning...";
+                        }
+                        status.style.color = "#666";
+                    }
                 }
             } catch (error) {
-                status.textContent = "An error occurred. Please try again.";
-                status.style.color = "red";
-                console.error(error);
+                console.error("Auto login error:", error);
+                // No flicker
             }
         }
     </script>

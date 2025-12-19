@@ -4,9 +4,9 @@ from src.auth import AuthSystem
 import os
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Secure random key for session
+app.secret_key = os.urandom(24)  # Session Key
 
-# Global instances
+# Globals
 camera = VideoCamera()
 auth_system = AuthSystem()
 
@@ -55,26 +55,42 @@ def camera_control():
 @app.route('/api/face_auth', methods=['POST'])
 def face_auth():
     username = request.json.get('username')
-    if not username:
-        return jsonify({'success': False, 'message': 'Username required'})
-
-    # Get latest detection from camera
+    
+    # Check Cam
     if not camera.last_detection:
         return jsonify({'success': False, 'message': 'No face detected'})
         
     detected_name = camera.last_detection.get('name')
     
     if detected_name == 'Unknown':
-        return jsonify({'success': False, 'message': 'Face authentication failed: Unknown user'})
+        return jsonify({
+            'success': False, 
+            'message': 'Face authentication failed: Unknown user',
+            'detected_name': 'Unknown'
+        })
         
-    if detected_name and detected_name.lower() == username.lower():
-        session['user'] = username
-        return jsonify({'success': True, 'redirect': url_for('welcome')})
-    
-    return jsonify({
-        'success': False, 
-        'message': f'Face authentication failed. Detected: {detected_name}, Expected: {username}'
-    })
+    # Verify User
+    if username:
+        if detected_name and detected_name.lower() == username.lower():
+            session['user'] = username
+            return jsonify({'success': True, 'redirect': url_for('welcome')})
+        else:
+             return jsonify({
+                'success': False, 
+                'message': f'Face authentication failed. Detected: {detected_name}, Expected: {username}',
+                'detected_name': detected_name
+            })
+            
+    # Auto Auth
+    if detected_name:
+        session['user'] = detected_name
+        return jsonify({
+            'success': True, 
+            'redirect': url_for('welcome'),
+            'detected_name': detected_name
+        })
+
+    return jsonify({'success': False, 'message': 'Authentication failed', 'detected_name': detected_name})
 
 @app.route('/welcome')
 def welcome():
@@ -85,6 +101,7 @@ def welcome():
 @app.route('/logout')
 def logout():
     session.pop('user', None)
+    camera.stop_camera() # Stop
     return redirect(url_for('login'))
 
 @app.route('/video_feed')
